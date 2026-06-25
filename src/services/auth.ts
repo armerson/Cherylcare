@@ -22,6 +22,7 @@ export async function signUp(
   const profile: Omit<UserProfile, 'createdAt' | 'updatedAt'> & { createdAt: unknown; updatedAt: unknown } = {
     userId: credential.user.uid,
     displayName,
+    name: displayName,
     email,
     diagnosedConditions: [],
     onboardingCompleted: false,

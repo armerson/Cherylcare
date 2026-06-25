@@ -6,7 +6,6 @@ import {
   getDocs,
   addDoc,
   updateDoc,
-  deleteDoc,
   query,
   where,
   orderBy,
@@ -32,10 +31,7 @@ import type {
 } from '../types';
 import { format } from 'date-fns';
 
-const userRef = (uid: string) => doc(db, 'users', uid);
 const col = (uid: string, name: string) => collection(db, 'users', uid, name);
-
-// ---- Profile ----
 
 export async function getProfile(uid: string): Promise<UserProfile | null> {
   const snap = await getDoc(doc(db, 'users', uid, 'profile', 'data'));
@@ -48,8 +44,6 @@ export async function updateProfile(uid: string, data: Partial<UserProfile>): Pr
     updatedAt: serverTimestamp(),
   });
 }
-
-// ---- Settings ----
 
 export async function getSettings(uid: string): Promise<UserSettings | null> {
   const snap = await getDoc(doc(db, 'users', uid, 'settings', 'data'));
@@ -64,11 +58,8 @@ export async function saveSettings(uid: string, settings: Partial<UserSettings>)
   );
 }
 
-// ---- Daily Check-In ----
-
 export async function saveDailyCheckIn(uid: string, checkIn: Omit<DailyCheckIn, 'completedAt' | 'updatedAt'>): Promise<void> {
-  const dateId = checkIn.date;
-  await setDoc(doc(db, 'users', uid, 'dailyCheckIns', dateId), {
+  await setDoc(doc(db, 'users', uid, 'dailyCheckIns', checkIn.date), {
     ...checkIn,
     completedAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -93,8 +84,6 @@ export function subscribeToTodayCheckIn(uid: string, callback: (checkIn: DailyCh
   });
 }
 
-// ---- Cycle Entries ----
-
 export async function saveCycleEntry(uid: string, entry: Omit<CycleEntry, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
   const ref = await addDoc(col(uid, 'cycleEntries'), {
     ...entry,
@@ -104,20 +93,11 @@ export async function saveCycleEntry(uid: string, entry: Omit<CycleEntry, 'id' |
   return ref.id;
 }
 
-export async function updateCycleEntry(uid: string, entryId: string, data: Partial<CycleEntry>): Promise<void> {
-  await updateDoc(doc(db, 'users', uid, 'cycleEntries', entryId), {
-    ...data,
-    updatedAt: serverTimestamp(),
-  });
-}
-
 export async function getCycleEntries(uid: string, limitCount: number = 6): Promise<CycleEntry[]> {
   const q = query(col(uid, 'cycleEntries'), orderBy('startDate', 'desc'), limit(limitCount));
   const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, ...d.data() }) as CycleEntry);
 }
-
-// ---- PMDD Logs ----
 
 export async function savePMDDLog(uid: string, log: Omit<PMDDLog, 'createdAt'>): Promise<void> {
   await setDoc(doc(db, 'users', uid, 'pmddLogs', log.date), {
@@ -132,22 +112,12 @@ export async function getRecentPMDDLogs(uid: string, days: number = 90): Promise
   return snap.docs.map(d => d.data() as PMDDLog);
 }
 
-// ---- Hypermobility Logs ----
-
 export async function saveHypermobilityLog(uid: string, log: Omit<HypermobilityLog, 'createdAt'>): Promise<void> {
   await setDoc(doc(db, 'users', uid, 'hypermobilityLogs', log.date), {
     ...log,
     createdAt: serverTimestamp(),
   });
 }
-
-export async function getRecentHypermobilityLogs(uid: string, days: number = 30): Promise<HypermobilityLog[]> {
-  const q = query(col(uid, 'hypermobilityLogs'), orderBy('date', 'desc'), limit(days));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => d.data() as HypermobilityLog);
-}
-
-// ---- Medications ----
 
 export async function saveMedicationEntry(uid: string, med: Omit<MedicationEntry, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
   const ref = await addDoc(col(uid, 'medicationEntries'), {
@@ -175,8 +145,6 @@ export async function getTodayMedicationLogs(uid: string, date: string): Promise
   return snap.docs.map(d => d.data() as MedicationLog);
 }
 
-// ---- Physio ----
-
 export async function savePhysioSession(uid: string, session: Omit<PhysioSession, 'id' | 'createdAt'>): Promise<string> {
   const ref = await addDoc(col(uid, 'physioSessions'), {
     ...session,
@@ -198,17 +166,6 @@ export async function getActivePlan(uid: string): Promise<PhysioPlan | null> {
   const d = snap.docs[0];
   return { id: d.id, ...d.data() } as PhysioPlan;
 }
-
-export async function savePhysioPlan(uid: string, plan: Omit<PhysioPlan, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  const ref = await addDoc(col(uid, 'physioPlans'), {
-    ...plan,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
-  return ref.id;
-}
-
-// ---- Insights ----
 
 export async function getInsights(uid: string): Promise<Insight[]> {
   const q = query(col(uid, 'insights'), orderBy('generatedAt', 'desc'), limit(20));

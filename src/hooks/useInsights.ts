@@ -3,9 +3,9 @@ import { getInsights, acknowledgeInsight as ackInsight } from '../services/fires
 import { useAppStore } from '../store/useAppStore';
 
 export function useInsights(uid: string | undefined) {
-  const insights = useAppStore((s) => s.insights);
-  const setInsights = useAppStore((s) => s.setInsights);
-  const acknowledgeInsight = useAppStore((s) => s.acknowledgeInsight);
+  const insights = useAppStore(s => s.insights);
+  const setInsights = useAppStore(s => s.setInsights);
+  const acknowledgeInsight = useAppStore(s => s.acknowledgeInsight);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
@@ -24,10 +24,10 @@ export function useInsights(uid: string | undefined) {
   const acknowledge = useCallback(
     async (insightId: string) => {
       if (!uid) return;
-      acknowledgeInsight(insightId); // optimistic
+      acknowledgeInsight(insightId);
       await ackInsight(uid, insightId);
     },
-    [uid, acknowledgeInsight]
+    [uid, acknowledgeInsight],
   );
 
   useEffect(() => {

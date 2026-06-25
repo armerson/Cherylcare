@@ -1,141 +1,144 @@
 export type CyclePhase = 'menstrual' | 'follicular' | 'ovulatory' | 'luteal';
+export type InsightType = 'sleep_mood' | 'cycle_pain' | 'pmdd_pattern' | 'stress_energy' | 'general';
 
-export type BleedingIntensity = 'spotting' | 'light' | 'medium' | 'heavy';
+export interface FirestoreTimestamp {
+  toDate(): Date;
+}
 
-export interface CycleEntry {
-  id: string;
-  startDate: string;          // YYYY-MM-DD
-  endDate?: string;
-  bleedingIntensity: BleedingIntensity;
-  symptoms: string[];
-  notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
+export interface UserProfile {
+  userId: string;
+  displayName: string;
+  name?: string;
+  email: string;
+  diagnosedConditions: string[];
+  onboardingCompleted: boolean;
+  dateOfBirth?: string;
+  createdAt: Date | FirestoreTimestamp;
+  updatedAt: Date | FirestoreTimestamp;
+}
+
+export interface UserSettings {
+  christianModeEnabled: boolean;
+  notificationsEnabled: boolean;
+  checkInReminderEnabled: boolean;
+  checkInReminderHour: number;
+  checkInReminderMinute: number;
+  cycleAlertsEnabled: boolean;
+  cycleAlertDaysAhead: number;
+  medicationRemindersEnabled: boolean;
+  averageCycleLength: number;
+  averagePeriodLength: number;
+  timezone: string;
+  units: 'metric' | 'imperial';
+  insightsEnabled: boolean;
+  updatedAt: Date | FirestoreTimestamp;
 }
 
 export interface DailyCheckIn {
-  date: string;               // YYYY-MM-DD — also the Firestore doc ID
-  mood: 1 | 2 | 3 | 4 | 5;  // 1=very low, 5=excellent
-  energy: number;             // 1-10
-  pain: number;               // 1-10
-  sleep: number;              // 1-10
-  stress: number;             // 1-10
+  date: string;
+  mood: number;
+  painLevel: number;
+  fatigue: number;
+  stress: number;
+  sleepQuality: number;
   notes?: string;
-  cycleDay?: number;
-  cyclePhase?: CyclePhase;
-  completedAt: Date;
-  updatedAt: Date;
+  completedAt?: Date | FirestoreTimestamp;
+  updatedAt?: Date | FirestoreTimestamp;
+}
+
+export interface CycleEntry {
+  id: string;
+  startDate: string;
+  endDate?: string;
+  type: 'period_start' | 'period_end' | 'spotting';
+  notes?: string;
+  flow?: 'light' | 'medium' | 'heavy';
+  createdAt: Date | FirestoreTimestamp;
+  updatedAt?: Date | FirestoreTimestamp;
 }
 
 export interface PMDDLog {
-  date: string;               // YYYY-MM-DD — Firestore doc ID
-  anxiety: number;            // 1-10
-  depression: number;
+  date: string;
   irritability: number;
-  anger: number;
-  brainFog: number;
+  anxiety: number;
+  depression: number;
+  foodCravings: number;
+  bloating: number;
+  breastTenderness: number;
+  fatigue: number;
+  sleepDisturbance: number;
+  concentration: number;
   overwhelm: number;
-  motivation: number;         // 1-10, 10 = high motivation (positive)
-  energy: number;
-  sleepQuality: number;
+  notes?: string;
   cycleDay?: number;
-  cyclePhase?: CyclePhase;
-  notes?: string;
-  createdAt: Date;
-}
-
-export interface PainLocation {
-  bodyPart: string;
-  side: 'left' | 'right' | 'bilateral' | 'central';
-  intensity: number;          // 1-10
-}
-
-export interface SubluxationEvent {
-  joint: string;
-  side: 'left' | 'right';
-  partial: boolean;
-  notes?: string;
+  createdAt: Date | FirestoreTimestamp;
 }
 
 export interface HypermobilityLog {
-  date: string;               // YYYY-MM-DD — Firestore doc ID
-  jointPain: PainLocation[];
-  instabilityLocations: string[];
-  subluxations: SubluxationEvent[];
-  fatigue: number;            // 1-10
-  dizziness: number;          // 1-10
+  date: string;
+  jointPain: string[];
+  subluxations: string[];
+  fatigue: number;
+  dizziness: number;
+  exerciseCompleted: boolean;
+  exerciseType?: string;
+  recoveryTime?: number;
   headaches: boolean;
-  digestiveSymptoms: boolean;
-  exerciseTolerance: number;  // 1-10
-  recoveryScore: number;      // 1-10
-  cycleDay?: number;
-  cyclePhase?: CyclePhase;
+  digestiveIssues: boolean;
   notes?: string;
-  createdAt: Date;
+  createdAt: Date | FirestoreTimestamp;
 }
-
-export type MedicationCategory =
-  | 'ssri'
-  | 'pain_relief'
-  | 'hormonal'
-  | 'prescribed_other'
-  | 'magnesium'
-  | 'vitamin_d'
-  | 'omega3'
-  | 'vitamin_b6'
-  | 'calcium'
-  | 'iron'
-  | 'vitamin_b12'
-  | 'custom';
-
-export type MedicationTiming = 'morning' | 'afternoon' | 'evening' | 'night' | 'with_meals' | 'as_needed';
 
 export interface MedicationEntry {
   id: string;
   name: string;
-  type: 'medication' | 'supplement';
-  category: MedicationCategory;
   dosage: string;
-  unit: string;
-  timing: MedicationTiming;
+  frequency: string;
+  type: 'medication' | 'supplement';
   reminderEnabled: boolean;
-  reminderTime?: string;      // 'HH:mm'
+  reminderTimes: string[];
   active: boolean;
-  prescribedBy?: string;
   notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | FirestoreTimestamp;
+  updatedAt: Date | FirestoreTimestamp;
 }
 
 export interface MedicationLog {
-  date: string;               // YYYY-MM-DD
   medicationId: string;
+  date: string;
   taken: boolean;
-  takenAt?: Date;
+  takenAt?: string;
   skippedReason?: string;
-  notes?: string;
 }
 
 export interface NutritionLog {
   date: string;
-  waterIntakeMl: number;
-  proteinGrams: number;
-  caffeineMg: number;
+  waterMl: number;
+  proteinG: number;
+  caffeineG: number;
   alcoholUnits: number;
-  exercise: Array<{
-    type: string;
-    durationMinutes: number;
-    intensity: 'gentle' | 'moderate' | 'vigorous';
-    notes?: string;
-  }>;
-  sleepDurationHours: number;
-  sleepQuality: number;       // 1-10
-  stressLevel: number;        // 1-10
+  sleepHours: number;
+  exerciseMinutes: number;
+  supplements: Record<string, boolean>;
   notes?: string;
-  createdAt: Date;
+  createdAt: Date | FirestoreTimestamp;
 }
 
-// Simplified exercise shape used in live session logging
+export interface PhysioExercise {
+  name: string;
+  sets: number;
+  reps: number;
+  holdSeconds?: number;
+  notes?: string;
+  category: string;
+}
+
+export interface PhysioPlanDay {
+  dayNumber: number;
+  label: string;
+  exercises: PhysioExercise[];
+}
+
 export interface SessionExercise {
   name: string;
   category: string;
@@ -148,28 +151,13 @@ export interface SessionExercise {
 
 export interface PhysioSession {
   id: string;
-  date: string;               // YYYY-MM-DD
+  date: string;
   planId?: string;
   exercises: SessionExercise[];
   durationMinutes: number;
-  overallExertion: number;    // 1-10
+  overallExertion: number;
   recoveryNotes?: string;
-  createdAt: Date;
-}
-
-// Exercise within a physio plan (target values, no tracking)
-export interface PhysioExercise {
-  name: string;
-  category: string;
-  sets: number;
-  reps: number;
-  notes?: string;
-}
-
-export interface PhysioPlanDay {
-  dayNumber: number;          // 1-based
-  label: string;              // e.g. 'Core & Glutes'
-  exercises: PhysioExercise[];
+  createdAt: Date | FirestoreTimestamp;
 }
 
 export interface PhysioPlan {
@@ -179,28 +167,8 @@ export interface PhysioPlan {
   daysPerWeek: number;
   durationWeeks: number;
   days: PhysioPlanDay[];
-  createdBy?: 'user' | 'physio';
-  physiotherapistName?: string;
-  notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export type InsightType =
-  | 'pmdd_pattern'
-  | 'sleep_mood'
-  | 'sleep_pain'
-  | 'supplement_sleep'
-  | 'supplement_mood'
-  | 'exercise_pain'
-  | 'exercise_fatigue'
-  | 'cycle_pain'
-  | 'nutrition_energy'
-  | 'hydration_headache';
-
-// Insight documents come from Firestore, so generatedAt is a Firestore Timestamp
-export interface FirestoreTimestamp {
-  toDate(): Date;
+  createdAt: Date | FirestoreTimestamp;
+  updatedAt: Date | FirestoreTimestamp;
 }
 
 export interface Insight {
@@ -213,46 +181,4 @@ export interface Insight {
   generatedAt: FirestoreTimestamp;
   acknowledged: boolean;
   acknowledgedAt?: FirestoreTimestamp;
-}
-
-export interface UserProfile {
-  userId: string;
-  displayName: string;
-  email: string;
-  avatarUrl?: string;
-  diagnosedConditions: string[];
-  onboardingCompleted: boolean;
-  expoPushToken?: string;
-  cycleLength?: number;       // cached average, updated by useCycle hook
-  periodLength?: number;
-  conditions?: string[];      // alias for diagnosedConditions used in Settings UI
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface UserSettings {
-  christianModeEnabled: boolean;
-  notificationsEnabled: boolean;
-  checkInReminderEnabled: boolean;
-  checkInReminderHour: number;      // 0-23
-  checkInReminderMinute: number;    // 0-59
-  cycleAlertsEnabled: boolean;
-  cycleAlertDaysAhead: number;      // days before period/PMDD to alert
-  medicationRemindersEnabled: boolean;
-  averageCycleLength: number;
-  averagePeriodLength: number;
-  lastPeriodStartDate?: string;     // YYYY-MM-DD
-  timezone: string;
-  units: 'metric' | 'imperial';
-  insightsEnabled: boolean;
-  updatedAt: Date;
-}
-
-export interface Encouragement {
-  text: string;
-  context: 'pmdd' | 'pain' | 'fatigue' | 'good_day' | 'general' | 'morning' | 'exercise' | 'streak';
-  christian?: boolean;
-  verse?: string;
-  verseRef?: string;
-  prayer?: string;
 }

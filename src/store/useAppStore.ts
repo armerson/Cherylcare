@@ -10,19 +10,16 @@ import type {
 } from '../types';
 
 interface AppState {
-  // Auth
   user: User | null;
   isInitialised: boolean;
   setUser: (user: User | null) => void;
   setInitialised: (value: boolean) => void;
 
-  // Profile and settings
   profile: UserProfile | null;
   settings: UserSettings | null;
   setProfile: (profile: UserProfile | null) => void;
   setSettings: (settings: UserSettings | null) => void;
 
-  // Cycle state
   currentCycleDay: number | null;
   currentCyclePhase: CyclePhase | null;
   currentCycle: CycleEntry | null;
@@ -38,20 +35,17 @@ interface AppState {
     pmddWindowDaysUntil: number | null;
   }) => void;
 
-  // Today's check-in
   todayCheckIn: DailyCheckIn | null;
   checkInStreak: number;
   setTodayCheckIn: (checkIn: DailyCheckIn | null) => void;
   setCheckInStreak: (streak: number) => void;
 
-  // Insights
   unreadInsights: number;
   insights: Insight[];
   setInsights: (insights: Insight[]) => void;
   acknowledgeInsight: (id: string) => void;
 
-  // Supplement adherence
-  todaySupplementAdherence: number;   // 0-1 fraction
+  todaySupplementAdherence: number;
   setTodaySupplementAdherence: (value: number) => void;
 }
 

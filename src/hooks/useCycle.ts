@@ -1,6 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { format } from 'date-fns';
-import { getCycleEntries, getSettings } from '../services/firestore';
+import { getCycleEntries, getRecentCheckIns } from '../services/firestore';
 import {
   calculateCycleDay,
   calculateCyclePhase,
@@ -10,14 +9,14 @@ import {
   calculateCheckInStreak,
 } from '../utils/cycleCalculations';
 import { useAppStore } from '../store/useAppStore';
-import { getRecentCheckIns } from '../services/firestore';
 
 export function useCycleInit(uid: string | undefined) {
-  const { setCycleData, setCheckInStreak, settings } = useAppStore();
+  const setCycleData = useAppStore(s => s.setCycleData);
+  const setCheckInStreak = useAppStore(s => s.setCheckInStreak);
+  const settings = useAppStore(s => s.settings);
 
   const loadCycleData = useCallback(async () => {
     if (!uid) return;
-
     try {
       const [cycles, checkIns] = await Promise.all([
         getCycleEntries(uid, 6),
@@ -46,7 +45,7 @@ export function useCycleInit(uid: string | undefined) {
       const cyclePhase = calculateCyclePhase(cycleDay, avgLength);
       const nextPeriodDate = predictNextPeriod(cycles, avgLength);
       const pmddWindowActive = isInPMDDWindow(cycleDay, avgLength);
-      const daysUntil = getDaysUntilNextPeriod(
+      const pmddWindowDaysUntil = getDaysUntilNextPeriod(
         nextPeriodDate
           ? new Date(nextPeriodDate.getTime() - (avgLength - 10) * 86400000)
           : null,
@@ -58,7 +57,7 @@ export function useCycleInit(uid: string | undefined) {
         currentCycle,
         nextPeriodDate,
         pmddWindowActive,
-        pmddWindowDaysUntil: daysUntil,
+        pmddWindowDaysUntil,
       });
 
       const streak = calculateCheckInStreak(checkIns.map(c => c.date));
