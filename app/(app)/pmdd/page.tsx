@@ -14,6 +14,7 @@ const SYMPTOMS = [
   { key: 'fatigue', label: 'Fatigue', color: '#A484C4' },
   { key: 'sleepDisturbance', label: 'Sleep disruption', color: '#849BC4' },
   { key: 'overwhelm', label: 'Overwhelm', color: '#C49B84' },
+  { key: 'concentration', label: 'Concentration issues', color: '#C4B484' },
 ] as const
 
 type SymptomKey = typeof SYMPTOMS[number]['key']
@@ -38,7 +39,6 @@ export default function PMDDPage() {
         date: getTodayDateString(),
         cycleDay: currentCycleDay ?? undefined,
         notes: notes || undefined,
-        concentration: 0,
         ...scores,
       })
       setSaved(true)

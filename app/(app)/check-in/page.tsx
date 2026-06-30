@@ -55,7 +55,7 @@ export default function CheckInPage() {
     setSaving(true)
     const checkIn: Omit<DailyCheckIn, 'completedAt' | 'updatedAt'> = {
       date: getTodayDateString(),
-      mood: mood + 1,
+      mood: (mood + 1) * 2,
       painLevel,
       fatigue,
       stress,
