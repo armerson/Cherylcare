@@ -10,6 +10,8 @@ const MENU_ITEMS = [
   { href: '/medications', label: 'Medications', icon: '💊', desc: 'Track supplements & meds' },
   { href: '/physio', label: 'Physio', icon: '🏃‍♀️', desc: 'Exercise & recovery logging' },
   { href: '/nutrition', label: 'Nutrition', icon: '🥗', desc: 'Water, protein & sleep' },
+  { href: '/trends', label: 'Trends', icon: '📈', desc: 'Mood, pain & fatigue charts' },
+  { href: '/export', label: 'Health Summary', icon: '📋', desc: 'Export for doctor appointments' },
   { href: '/settings', label: 'Settings', icon: '⚙️', desc: 'Preferences & reminders' },
 ]
 

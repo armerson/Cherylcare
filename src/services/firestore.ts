@@ -112,6 +112,12 @@ export async function getRecentPMDDLogs(uid: string, days: number = 90): Promise
   return snap.docs.map(d => d.data() as PMDDLog);
 }
 
+export async function getRecentHypermobilityLogs(uid: string, days: number = 30): Promise<HypermobilityLog[]> {
+  const q = query(col(uid, 'hypermobilityLogs'), orderBy('date', 'desc'), limit(days));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => d.data() as HypermobilityLog);
+}
+
 export async function saveHypermobilityLog(uid: string, log: Omit<HypermobilityLog, 'createdAt'>): Promise<void> {
   await setDoc(doc(db, 'users', uid, 'hypermobilityLogs', log.date), {
     ...log,
