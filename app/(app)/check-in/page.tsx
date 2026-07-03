@@ -2,8 +2,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/store/useAppStore'
-import { saveDailyCheckIn } from '@/services/firestore'
+import { saveDailyCheckIn, getDailyCheckIn } from '@/services/firestore'
 import { getTodayDateString } from '@/utils/dateHelpers'
+import { format, subDays } from 'date-fns'
 import type { DailyCheckIn } from '@/types'
 
 const MOODS = ['😞', '😕', '😐', '🙂', '😄']
@@ -36,11 +37,15 @@ function Slider({ label, value, onChange, color = '#C4849B', low = 'Low', high =
   )
 }
 
+const TODAY = getTodayDateString()
+const YESTERDAY = format(subDays(new Date(), 1), 'yyyy-MM-dd')
+
 export default function CheckInPage() {
   const user = useAppStore(s => s.user)
   const setTodayCheckIn = useAppStore(s => s.setTodayCheckIn)
   const router = useRouter()
 
+  const [selectedDate, setSelectedDate] = useState(TODAY)
   const [mood, setMood] = useState(2)
   const [painLevel, setPainLevel] = useState(3)
   const [fatigue, setFatigue] = useState(3)
@@ -49,12 +54,20 @@ export default function CheckInPage() {
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(false)
+  const [alreadyLogged, setAlreadyLogged] = useState(false)
+
+  const handleDateChange = async (date: string) => {
+    if (!user) return
+    setSelectedDate(date)
+    const existing = await getDailyCheckIn(user.uid, date)
+    setAlreadyLogged(!!existing)
+  }
 
   const handleSave = async () => {
     if (!user) return
     setSaving(true)
     const checkIn: Omit<DailyCheckIn, 'completedAt' | 'updatedAt'> = {
-      date: getTodayDateString(),
+      date: selectedDate,
       mood: (mood + 1) * 2,
       painLevel,
       fatigue,
@@ -64,7 +77,7 @@ export default function CheckInPage() {
     }
     try {
       await saveDailyCheckIn(user.uid, checkIn)
-      setTodayCheckIn(checkIn as DailyCheckIn)
+      if (selectedDate === TODAY) setTodayCheckIn(checkIn as DailyCheckIn)
       setDone(true)
       setTimeout(() => router.push('/dashboard'), 1200)
     } finally {
@@ -88,8 +101,30 @@ export default function CheckInPage() {
     <div className="px-4 pt-8 pb-4">
       <div className="mb-5">
         <h1 className="text-2xl font-bold text-gray-800">Daily Check-In</h1>
-        <p className="text-gray-500 text-sm mt-1">How are you feeling today?</p>
+        <p className="text-gray-500 text-sm mt-1">How are you feeling?</p>
       </div>
+
+      <div className="flex gap-2 mb-4">
+        {[{ label: 'Today', value: TODAY }, { label: 'Yesterday', value: YESTERDAY }].map(opt => (
+          <button
+            key={opt.value}
+            onClick={() => handleDateChange(opt.value)}
+            className={`flex-1 py-2 rounded-2xl text-sm font-medium border transition-colors ${
+              selectedDate === opt.value
+                ? 'bg-[#C4849B] text-white border-[#C4849B]'
+                : 'bg-white text-gray-600 border-[#F0E8E2]'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+      {alreadyLogged && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-4">
+          <p className="text-yellow-700 text-sm">You already logged {selectedDate === TODAY ? 'today' : 'yesterday'}. Saving will overwrite it.</p>
+        </div>
+      )}
 
       <div className="bg-white rounded-3xl p-5 border border-[#F0E8E2] mb-4">
         <p className="font-semibold text-gray-700 mb-4">Mood</p>

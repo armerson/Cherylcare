@@ -70,7 +70,7 @@ export default function DashboardPage() {
         <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
           <p className="text-green-700 font-semibold text-sm">✓ Check-in complete</p>
           <p className="text-green-600 text-xs">
-            Mood {todayCheckIn.mood}/5 · Pain {todayCheckIn.painLevel}/10 · Streak: {checkInStreak} days
+            Mood {todayCheckIn.mood}/10 · Pain {todayCheckIn.painLevel}/10 · Streak: {checkInStreak} days
           </p>
         </div>
       )}
