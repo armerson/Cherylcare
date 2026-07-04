@@ -35,6 +35,8 @@ export default function DashboardPage() {
     ]).then(([yest, two]) => {
       setMissedYesterday(!yest)
       setMissedTwoDays(!two)
+    }).catch(() => {
+      // Firestore unavailable — leave banners hidden
     })
   }, [user])
 
@@ -43,7 +45,7 @@ export default function DashboardPage() {
   return (
     <div className="px-4 pt-8 pb-4">
       <div className="mb-5">
-        <p className="text-gray-500 text-sm">{getGreeting()}</p>
+        <p className="text-gray-500 text-sm" suppressHydrationWarning>{getGreeting()}</p>
         <h1 className="text-2xl font-bold text-gray-800">
           {profile?.name || profile?.displayName || 'There'} 🌸
         </h1>
