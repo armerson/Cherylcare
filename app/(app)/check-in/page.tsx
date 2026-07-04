@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAppStore } from '@/store/useAppStore'
 import { saveDailyCheckIn, getDailyCheckIn } from '@/services/firestore'
@@ -41,7 +41,7 @@ const TODAY = getTodayDateString()
 const YESTERDAY = format(subDays(new Date(), 1), 'yyyy-MM-dd')
 const TWO_DAYS_AGO = format(subDays(new Date(), 2), 'yyyy-MM-dd')
 
-export default function CheckInPage() {
+function CheckInContent() {
   const user = useAppStore(s => s.user)
   const setTodayCheckIn = useAppStore(s => s.setTodayCheckIn)
   const router = useRouter()
@@ -185,5 +185,17 @@ export default function CheckInPage() {
         {saving ? 'Saving...' : 'Save Check-In'}
       </button>
     </div>
+  )
+}
+
+export default function CheckInPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-5xl animate-pulse">🌸</div>
+      </div>
+    }>
+      <CheckInContent />
+    </Suspense>
   )
 }

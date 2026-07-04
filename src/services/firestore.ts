@@ -45,9 +45,26 @@ export async function updateProfile(uid: string, data: Partial<UserProfile>): Pr
   });
 }
 
-export async function getSettings(uid: string): Promise<UserSettings | null> {
+const DEFAULT_SETTINGS: UserSettings = {
+  christianModeEnabled: false,
+  notificationsEnabled: true,
+  checkInReminderEnabled: true,
+  checkInReminderHour: 20,
+  checkInReminderMinute: 0,
+  cycleAlertsEnabled: true,
+  cycleAlertDaysAhead: 3,
+  medicationRemindersEnabled: true,
+  averageCycleLength: 28,
+  averagePeriodLength: 5,
+  timezone: 'Europe/London',
+  units: 'metric',
+  insightsEnabled: true,
+  updatedAt: new Date(),
+};
+
+export async function getSettings(uid: string): Promise<UserSettings> {
   const snap = await getDoc(doc(db, 'users', uid, 'settings', 'data'));
-  return snap.exists() ? (snap.data() as UserSettings) : null;
+  return snap.exists() ? (snap.data() as UserSettings) : DEFAULT_SETTINGS;
 }
 
 export async function saveSettings(uid: string, settings: Partial<UserSettings>): Promise<void> {

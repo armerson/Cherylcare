@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { saveSettings } from '@/services/firestore'
+import type { UserSettings } from '@/types'
 
 export default function SettingsPage() {
   const user = useAppStore(s => s.user)
@@ -23,17 +24,17 @@ export default function SettingsPage() {
   }, [settings])
 
   const handleSave = async () => {
-    if (!user || !settings) return
+    if (!user) return
     setSaving(true)
     const updated = {
-      ...settings,
+      ...(settings ?? {}),
       averageCycleLength: cycleLength,
       christianModeEnabled: christianMode,
       insightsEnabled,
     }
     try {
       await saveSettings(user.uid, updated)
-      setSettings(updated)
+      setSettings(updated as UserSettings)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } finally {
