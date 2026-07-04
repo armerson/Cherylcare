@@ -171,6 +171,14 @@ export interface PhysioPlan {
   updatedAt: Date | FirestoreTimestamp;
 }
 
+export interface Encouragement {
+  context: string;
+  text: string;
+  verse?: string;
+  verseRef?: string;
+  christian?: boolean;
+}
+
 export interface Insight {
   id: string;
   type: InsightType;
