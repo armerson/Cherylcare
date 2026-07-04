@@ -39,6 +39,7 @@ function Slider({ label, value, onChange, color = '#C4849B', low = 'Low', high =
 
 const TODAY = getTodayDateString()
 const YESTERDAY = format(subDays(new Date(), 1), 'yyyy-MM-dd')
+const TWO_DAYS_AGO = format(subDays(new Date(), 2), 'yyyy-MM-dd')
 
 export default function CheckInPage() {
   const user = useAppStore(s => s.user)
@@ -105,7 +106,11 @@ export default function CheckInPage() {
       </div>
 
       <div className="flex gap-2 mb-4">
-        {[{ label: 'Today', value: TODAY }, { label: 'Yesterday', value: YESTERDAY }].map(opt => (
+        {[
+          { label: 'Today', value: TODAY },
+          { label: 'Yesterday', value: YESTERDAY },
+          { label: '2 days ago', value: TWO_DAYS_AGO },
+        ].map(opt => (
           <button
             key={opt.value}
             onClick={() => handleDateChange(opt.value)}
@@ -122,7 +127,9 @@ export default function CheckInPage() {
 
       {alreadyLogged && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-4">
-          <p className="text-yellow-700 text-sm">You already logged {selectedDate === TODAY ? 'today' : 'yesterday'}. Saving will overwrite it.</p>
+          <p className="text-yellow-700 text-sm">
+            You already logged {selectedDate === TODAY ? 'today' : selectedDate === YESTERDAY ? 'yesterday' : '2 days ago'}. Saving will overwrite it.
+          </p>
         </div>
       )}
 
