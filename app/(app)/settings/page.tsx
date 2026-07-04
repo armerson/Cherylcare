@@ -9,9 +9,11 @@ export default function SettingsPage() {
   const settings = useAppStore(s => s.settings)
   const setSettings = useAppStore(s => s.setSettings)
 
-  const [cycleLength, setCycleLength] = useState(28)
-  const [christianMode, setChristianMode] = useState(false)
-  const [insightsEnabled, setInsightsEnabled] = useState(true)
+  // Initialize from the store so toggles don't flicker from defaults to
+  // saved values on mount — settings are usually already loaded by AuthProvider.
+  const [cycleLength, setCycleLength] = useState(settings?.averageCycleLength ?? 28)
+  const [christianMode, setChristianMode] = useState(settings?.christianModeEnabled ?? false)
+  const [insightsEnabled, setInsightsEnabled] = useState(settings?.insightsEnabled ?? true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
