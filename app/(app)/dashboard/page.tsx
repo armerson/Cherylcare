@@ -6,6 +6,7 @@ import { useCycleInit } from '@/hooks/useCycle'
 import { getDailyCheckIn } from '@/services/firestore'
 import { getGreeting } from '@/utils/dateHelpers'
 import { CYCLE_PHASE_CONFIG } from '@/constants/theme'
+import { getEncouragement } from '@/constants/encouragement'
 import { format, subDays } from 'date-fns'
 
 export default function DashboardPage() {
@@ -17,6 +18,7 @@ export default function DashboardPage() {
   const checkInStreak = useAppStore(s => s.checkInStreak)
   const todayCheckIn = useAppStore(s => s.todayCheckIn)
   const nextPeriodDate = useAppStore(s => s.nextPeriodDate)
+  const settings = useAppStore(s => s.settings)
 
   const [missedYesterday, setMissedYesterday] = useState(false)
   const [missedTwoDays, setMissedTwoDays] = useState(false)
@@ -141,6 +143,26 @@ export default function DashboardPage() {
           </p>
         </div>
       )}
+
+      {settings?.christianModeEnabled && (() => {
+        const context = pmddWindowActive ? 'pmdd'
+          : todayCheckIn && todayCheckIn.fatigue >= 7 ? 'fatigue'
+          : todayCheckIn && todayCheckIn.painLevel >= 7 ? 'pain'
+          : 'general'
+        const enc = getEncouragement(context, true)
+        return (
+          <div className="bg-purple-50 border border-purple-100 rounded-3xl p-5 mb-4">
+            <p className="text-xs text-purple-400 font-medium uppercase tracking-wide mb-2">Today&apos;s encouragement</p>
+            <p className="text-gray-700 text-sm leading-relaxed mb-3">{enc.text}</p>
+            {enc.verse && (
+              <div className="border-l-2 border-purple-200 pl-3">
+                <p className="text-xs text-gray-500 italic">&ldquo;{enc.verse}&rdquo;</p>
+                <p className="text-xs text-purple-400 mt-1">{enc.verseRef}</p>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       <div className="grid grid-cols-2 gap-3">
         {[
