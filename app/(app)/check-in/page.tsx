@@ -184,6 +184,10 @@ function CheckInContent() {
       >
         {saving ? 'Saving...' : 'Save Check-In'}
       </button>
+
+      <p className="text-center text-[10px] text-gray-300 mt-4">
+        Notes are optional · build 2026-07-04-v2
+      </p>
     </div>
   )
 }
