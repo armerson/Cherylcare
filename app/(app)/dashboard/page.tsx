@@ -1,9 +1,12 @@
 'use client'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { useCycleInit } from '@/hooks/useCycle'
+import { getDailyCheckIn } from '@/services/firestore'
 import { getGreeting } from '@/utils/dateHelpers'
 import { CYCLE_PHASE_CONFIG } from '@/constants/theme'
+import { format, subDays } from 'date-fns'
 
 export default function DashboardPage() {
   const user = useAppStore(s => s.user)
@@ -15,7 +18,23 @@ export default function DashboardPage() {
   const todayCheckIn = useAppStore(s => s.todayCheckIn)
   const nextPeriodDate = useAppStore(s => s.nextPeriodDate)
 
+  const [missedYesterday, setMissedYesterday] = useState(false)
+  const [missedTwoDays, setMissedTwoDays] = useState(false)
+
   useCycleInit(user?.uid)
+
+  useEffect(() => {
+    if (!user) return
+    const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd')
+    const twoDaysAgo = format(subDays(new Date(), 2), 'yyyy-MM-dd')
+    Promise.all([
+      getDailyCheckIn(user.uid, yesterday),
+      getDailyCheckIn(user.uid, twoDaysAgo),
+    ]).then(([yest, two]) => {
+      setMissedYesterday(!yest)
+      setMissedTwoDays(!two)
+    })
+  }, [user])
 
   const phaseConfig = currentCyclePhase ? CYCLE_PHASE_CONFIG[currentCyclePhase] : null
 
@@ -73,6 +92,32 @@ export default function DashboardPage() {
             Mood {todayCheckIn.mood}/10 · Pain {todayCheckIn.painLevel}/10 · Streak: {checkInStreak} days
           </p>
         </div>
+      )}
+
+      {missedYesterday && (
+        <Link href="/check-in?date=yesterday">
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 flex items-center gap-3 active:bg-amber-100 transition-colors">
+            <span className="text-xl">📝</span>
+            <div className="flex-1">
+              <p className="text-amber-800 font-semibold text-sm">Missed yesterday&apos;s check-in</p>
+              <p className="text-amber-600 text-xs mt-0.5">Tap to fill it in — takes 30 seconds</p>
+            </div>
+            <span className="text-amber-400 text-lg">›</span>
+          </div>
+        </Link>
+      )}
+
+      {missedTwoDays && (
+        <Link href="/check-in?date=two-days-ago">
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 flex items-center gap-3 active:bg-amber-100 transition-colors">
+            <span className="text-xl">📝</span>
+            <div className="flex-1">
+              <p className="text-amber-800 font-semibold text-sm">Missed check-in 2 days ago</p>
+              <p className="text-amber-600 text-xs mt-0.5">Tap to fill it in before it&apos;s too late</p>
+            </div>
+            <span className="text-amber-400 text-lg">›</span>
+          </div>
+        </Link>
       )}
 
       <div className="grid grid-cols-2 gap-3 mb-4">

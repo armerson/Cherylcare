@@ -1,6 +1,6 @@
 'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAppStore } from '@/store/useAppStore'
 import { saveDailyCheckIn, getDailyCheckIn } from '@/services/firestore'
 import { getTodayDateString } from '@/utils/dateHelpers'
@@ -45,8 +45,15 @@ export default function CheckInPage() {
   const user = useAppStore(s => s.user)
   const setTodayCheckIn = useAppStore(s => s.setTodayCheckIn)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
-  const [selectedDate, setSelectedDate] = useState(TODAY)
+  const initialDate = searchParams.get('date') === 'yesterday'
+    ? YESTERDAY
+    : searchParams.get('date') === 'two-days-ago'
+      ? TWO_DAYS_AGO
+      : TODAY
+
+  const [selectedDate, setSelectedDate] = useState(initialDate)
   const [mood, setMood] = useState(2)
   const [painLevel, setPainLevel] = useState(3)
   const [fatigue, setFatigue] = useState(3)
@@ -56,6 +63,11 @@ export default function CheckInPage() {
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(false)
   const [alreadyLogged, setAlreadyLogged] = useState(false)
+
+  useEffect(() => {
+    if (!user || initialDate === TODAY) return
+    getDailyCheckIn(user.uid, initialDate).then(existing => setAlreadyLogged(!!existing))
+  }, [user, initialDate])
 
   const handleDateChange = async (date: string) => {
     if (!user) return
