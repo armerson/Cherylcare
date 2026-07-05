@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/store/useAppStore'
 import { BottomNav } from '@/components/BottomNav'
+import { APP_VERSION } from '@/constants/version'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const user = useAppStore(s => s.user)
@@ -30,6 +31,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main className="pb-20 max-w-lg mx-auto">
         {children}
       </main>
+      <span className="fixed top-1 right-2 z-50 text-[10px] text-gray-300 pointer-events-none select-none">
+        {APP_VERSION}
+      </span>
       <BottomNav />
     </div>
   )

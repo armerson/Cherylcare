@@ -5,6 +5,7 @@ import { useAppStore } from '@/store/useAppStore'
 import { saveDailyCheckIn, getDailyCheckIn } from '@/services/firestore'
 import { getTodayDateString } from '@/utils/dateHelpers'
 import { format, subDays } from 'date-fns'
+import { APP_VERSION } from '@/constants/version'
 import type { DailyCheckIn } from '@/types'
 
 const MOODS = ['😞', '😕', '😐', '🙂', '😄']
@@ -186,7 +187,7 @@ function CheckInContent() {
       </button>
 
       <p className="text-center text-[10px] text-gray-300 mt-4">
-        Notes are optional · build 2026-07-04-v2
+        Notes are optional · {APP_VERSION}
       </p>
     </div>
   )
