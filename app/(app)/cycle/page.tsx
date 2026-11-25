@@ -1,9 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAppStore } from '@/store/useAppStore'
-import { saveCycleEntry } from '@/services/firestore'
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'date-fns'
-import { calculateCycleDay, calculateCyclePhase } from '@/utils/cycleCalculations'
+import { deleteCycleEntry, getCycleEntries, saveCycleEntry } from '@/services/firestore'
+import { addMonths, eachDayOfInterval, endOfMonth, format, getDay, isSameMonth, parseISO, startOfMonth } from 'date-fns'
+import { getPhaseForDate } from '@/utils/cycleCalculations'
+import type { CycleEntry } from '@/types'
 
 const PHASE_COLORS: Record<string, string> = {
   menstrual: '#FAEEF2',
@@ -14,7 +15,6 @@ const PHASE_COLORS: Record<string, string> = {
 
 export default function CyclePage() {
   const user = useAppStore(s => s.user)
-  const currentCycle = useAppStore(s => s.currentCycle)
   const currentCycleDay = useAppStore(s => s.currentCycleDay)
   const nextPeriodDate = useAppStore(s => s.nextPeriodDate)
   const settings = useAppStore(s => s.settings)
@@ -22,10 +22,33 @@ export default function CyclePage() {
   const [showModal, setShowModal] = useState(false)
   const [periodDate, setPeriodDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [saving, setSaving] = useState(false)
+  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()))
+  const [cycleEntries, setCycleEntries] = useState<CycleEntry[]>([])
+  const [loadingEntries, setLoadingEntries] = useState(true)
+  const [entryToDelete, setEntryToDelete] = useState<CycleEntry | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadEntries = useCallback(async () => {
+    if (!user) return
+    setLoadingEntries(true)
+    try {
+      const entries = await getCycleEntries(user.uid, 24)
+      setCycleEntries(entries.filter(entry => entry.type === 'period_start'))
+    } catch {
+      setError('Cycle history could not be loaded. Please try again.')
+    } finally {
+      setLoadingEntries(false)
+    }
+  }, [user])
+
+  useEffect(() => {
+    loadEntries()
+  }, [loadEntries])
 
   const today = new Date()
-  const monthStart = startOfMonth(today)
-  const monthEnd = endOfMonth(today)
+  const monthStart = startOfMonth(visibleMonth)
+  const monthEnd = endOfMonth(visibleMonth)
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd })
   const startPad = getDay(monthStart)
   const avgLength = settings?.averageCycleLength ?? 28
@@ -33,14 +56,33 @@ export default function CyclePage() {
   const handleLogPeriod = async () => {
     if (!user) return
     setSaving(true)
+    setError(null)
     try {
       await saveCycleEntry(user.uid, {
         startDate: periodDate,
         type: 'period_start',
       })
+      await loadEntries()
       setShowModal(false)
+    } catch {
+      setError('That period date could not be saved. Please try again.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleDeletePeriod = async () => {
+    if (!user || !entryToDelete) return
+    setDeleting(true)
+    setError(null)
+    try {
+      await deleteCycleEntry(user.uid, entryToDelete.id)
+      setCycleEntries(entries => entries.filter(entry => entry.id !== entryToDelete.id))
+      setEntryToDelete(null)
+    } catch {
+      setError('That period date could not be deleted. Please try again.')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -70,8 +112,43 @@ export default function CyclePage() {
         </div>
       )}
 
+      {error && (
+        <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </p>
+      )}
+
       <div className="bg-white rounded-3xl p-4 border border-[#F0E8E2] mb-4">
-        <p className="font-semibold text-gray-700 mb-3 text-center">{format(today, 'MMMM yyyy')}</p>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setVisibleMonth(month => addMonths(month, -1))}
+            aria-label="Show previous month"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-[#E4CCD5] text-2xl font-semibold text-[#9A5F73]"
+          >
+            ‹
+          </button>
+          <div className="text-center">
+            <p className="font-semibold text-gray-700">{format(visibleMonth, 'MMMM yyyy')}</p>
+            {!isSameMonth(visibleMonth, today) && (
+              <button
+                type="button"
+                onClick={() => setVisibleMonth(startOfMonth(new Date()))}
+                className="mt-0.5 text-xs font-semibold text-[#9A5F73] underline underline-offset-2"
+              >
+                Return to this month
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setVisibleMonth(month => addMonths(month, 1))}
+            aria-label="Show next month"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-[#E4CCD5] text-2xl font-semibold text-[#9A5F73]"
+          >
+            ›
+          </button>
+        </div>
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
             <div key={d} className="text-center text-xs text-gray-400 font-medium">{d}</div>
@@ -80,11 +157,13 @@ export default function CyclePage() {
         <div className="grid grid-cols-7 gap-1">
           {Array.from({ length: startPad }).map((_, i) => <div key={`pad-${i}`} />)}
           {days.map(day => {
-            const isToday = format(day, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
-            const phase = currentCycle?.startDate
-              ? calculateCyclePhase(calculateCycleDay(currentCycle.startDate, day), avgLength)
-              : null
-            const bgColor = phase ? PHASE_COLORS[phase] : undefined
+            const dateString = format(day, 'yyyy-MM-dd')
+            const isToday = dateString === format(today, 'yyyy-MM-dd')
+            const phase = getPhaseForDate(day, cycleEntries, avgLength)
+            const isLoggedPeriod = cycleEntries.some(entry =>
+              dateString >= entry.startDate && dateString <= (entry.endDate ?? entry.startDate),
+            )
+            const bgColor = isLoggedPeriod ? '#F4C7D5' : phase ? PHASE_COLORS[phase] : undefined
 
             return (
               <div
@@ -92,6 +171,7 @@ export default function CyclePage() {
                 className={`aspect-square flex items-center justify-center rounded-full text-sm
                   ${isToday ? 'ring-2 ring-[#C4849B] font-bold text-[#C4849B]' : 'text-gray-700'}`}
                 style={{ backgroundColor: bgColor }}
+                title={isLoggedPeriod ? 'Logged period' : phase ?? undefined}
               >
                 {format(day, 'd')}
               </div>
@@ -99,6 +179,33 @@ export default function CyclePage() {
           })}
         </div>
       </div>
+
+      <section className="mt-5 rounded-3xl border border-[#F0E8E2] bg-white p-4">
+        <h2 className="font-semibold text-gray-800">Saved period dates</h2>
+        <p className="mt-1 text-xs text-gray-500">Delete a date here if it was added by mistake.</p>
+        {loadingEntries ? (
+          <p className="py-5 text-center text-sm text-gray-400">Loading…</p>
+        ) : cycleEntries.length === 0 ? (
+          <p className="py-5 text-center text-sm text-gray-500">No period dates saved yet.</p>
+        ) : (
+          <div className="mt-3 divide-y divide-gray-100">
+            {cycleEntries.map(entry => (
+              <div key={entry.id} className="flex items-center justify-between gap-3 py-3">
+                <p className="text-sm font-medium text-gray-800">
+                  {format(parseISO(entry.startDate), 'd MMMM yyyy')}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setEntryToDelete(entry)}
+                  className="rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-600"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <div className="grid grid-cols-2 gap-2">
         {Object.entries(PHASE_COLORS).map(([phase, color]) => (
@@ -127,6 +234,35 @@ export default function CyclePage() {
             >
               {saving ? 'Saving...' : 'Log Period'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {entryToDelete && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={() => !deleting && setEntryToDelete(null)}>
+          <div className="mx-auto w-full max-w-lg rounded-t-3xl bg-white p-6" onClick={event => event.stopPropagation()}>
+            <h2 className="text-lg font-bold text-gray-800">Delete this period date?</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              {format(parseISO(entryToDelete.startDate), 'd MMMM yyyy')} will be removed from cycle history. This cannot be undone.
+            </p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setEntryToDelete(null)}
+                className="rounded-2xl border border-gray-200 py-3 font-semibold text-gray-700 disabled:opacity-60"
+              >
+                Keep date
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={handleDeletePeriod}
+                className="rounded-2xl bg-red-600 py-3 font-semibold text-white disabled:opacity-60"
+              >
+                {deleting ? 'Deleting…' : 'Delete date'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -5,6 +5,7 @@ import {
   getDoc,
   getDocs,
   addDoc,
+  deleteDoc,
   updateDoc,
   query,
   where,
@@ -114,6 +115,10 @@ export async function getCycleEntries(uid: string, limitCount: number = 6): Prom
   const q = query(col(uid, 'cycleEntries'), orderBy('startDate', 'desc'), limit(limitCount));
   const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, ...d.data() }) as CycleEntry);
+}
+
+export async function deleteCycleEntry(uid: string, entryId: string): Promise<void> {
+  await deleteDoc(doc(db, 'users', uid, 'cycleEntries', entryId));
 }
 
 export async function savePMDDLog(uid: string, log: Omit<PMDDLog, 'createdAt'>): Promise<void> {
